@@ -102,6 +102,8 @@ def run_entries(client: TradingClient, allow_buys: bool) -> list[str]:
     top = sig.sort_values("rank").head(config.TOP_N)
     lots = load_positions()
     entry = date.today()
+    if any(l["entry_date"] == entry.isoformat() for l in lots):
+        return ["Buys skipped (today's tranche already placed)."]
     exit_after = pd.bdate_range(entry, periods=config.HOLD_BDAYS + 1)[-1].date()
     msgs = []
     for _, row in top.iterrows():

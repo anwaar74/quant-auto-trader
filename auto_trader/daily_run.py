@@ -58,11 +58,10 @@ def main() -> None:
 
     # 3. Trade
     try:
-        ib = trader.connect()
-        exit_msgs = trader.run_exits(ib)
-        entry_msgs = trader.run_entries(ib, allow_buys=not campaign_over and not stale)
-        snap = trader.account_snapshot(ib)
-        ib.disconnect()
+        client = trader.connect()
+        exit_msgs = trader.run_exits(client)
+        entry_msgs = trader.run_entries(client, allow_buys=not campaign_over and not stale)
+        snap = trader.account_snapshot(client)
         lines = ["💼 <b>Trades</b>"]
         lines += [f"• {m}" for m in (exit_msgs or ["no exits due"])]
         lines += [f"• {m}" for m in entry_msgs]
