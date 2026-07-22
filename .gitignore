@@ -1,0 +1,4 @@
+__pycache__/
+*.tmp.parquet
+auto_trader/day10_last_run.ipynb
+runner.log

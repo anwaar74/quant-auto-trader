@@ -1,0 +1,54 @@
+name: daily-paper-trade
+
+on:
+  schedule:
+    - cron: "0 9 * * 1-5"     # 09:00 UTC = 17:00 MYT, weekdays
+  workflow_dispatch: {}        # manual "Run workflow" button for testing
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-trade
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+      ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run daily cycle
+        run: python auto_trader/daily_run.py
+
+      - name: Commit state back to repo
+        if: always()
+        run: |
+          git config user.name "auto-trader-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add auto_trader/positions.json auto_trader/trades_log.csv \
+                  signals_*.csv day10_run_meta.json paper_log.csv 2>/dev/null || true
+          git commit -m "state: $(date -u +%F)" || echo "nothing to commit"
+          git push
+
+      - name: Upload executed notebook (debug aid)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: day10_last_run
+          path: auto_trader/day10_last_run.ipynb
+          if-no-files-found: ignore

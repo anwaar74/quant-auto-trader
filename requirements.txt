@@ -1,0 +1,13 @@
+pandas
+numpy
+pyarrow
+scipy
+lightgbm
+matplotlib
+scikit-learn
+yfinance
+requests
+alpaca-py
+nbconvert
+nbclient
+ipykernel
