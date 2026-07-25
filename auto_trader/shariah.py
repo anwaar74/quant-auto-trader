@@ -21,12 +21,25 @@ log = logging.getLogger("shariah")
 
 # Industry/sector substrings (lowercase) that fail the business screen.
 HARAM_KEYWORDS = [
+    # Conventional Finance & Riba (Interest)
     "bank", "insurance", "capital markets", "credit services",
     "financial conglomerates", "mortgage", "asset management",
-    "alcohol", "brewer", "distill", "winer",
-    "tobacco", "gambling", "casino", "lotter",
-    "aerospace & defense", "defense",
-    "pork", "adult", "cannabis",
+    "pawn", "brokerage", "lending", "conventional finance",
+    "stock exchanges",           # catches "Financial Data & Stock Exchanges"
+    # Vice & Intoxicants
+    "alcohol", "brewer", "distill", "winer", "liquor", "spirits",
+    "tobacco", "gambling", "casino", "lotter", "betting",
+    "adult", "porn", "cannabis",
+    # Non-Permissible Food & Agriculture
+    "pork", "swine", "non-halal", "haram meat",
+    # Weapons & Defense
+    "aerospace & defense", "defense", "weapon", "firearm", "military",
+    # Entertainment & Media (high risk of non-compliant content)
+    "cinema", "broadcasting", "music", "nightclub", "entertainment",
+    # Hospitality & Leisure (high risk of alcohol/casino revenue)
+    "hotel", "resort", "cruise",
+    "lodging",                   # yfinance's industry name for hotels
+    "travel services",           # yfinance's industry for cruise/booking firms
 ]
 
 _cache: dict[str, tuple[bool, str]] = {}
