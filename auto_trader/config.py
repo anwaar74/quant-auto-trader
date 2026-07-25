@@ -21,6 +21,12 @@ EXECUTED_NOTEBOOK = Path(__file__).resolve().parent / "day10_last_run.ipynb"
 META_PATH = BASE_DIR / "day10_run_meta.json"
 NOTEBOOK_TIMEOUT_S = 3600
 
+# --- Shariah screen (approximate AAOIFI ratios; see shariah.py) ---
+SHARIAH_SCREEN = True
+SHARIAH_MAX_DEBT_RATIO = 0.33
+SHARIAH_MAX_CASH_RATIO = 0.33
+SHARIAH_MAX_CANDIDATES = 15    # how deep down the ranking to search for TOP_N compliant names
+
 # --- Alpaca (paper only — hardcoded, no live endpoint anywhere) ---
 ALPACA_API_KEY = os.environ.get("ALPACA_API_KEY", "")
 ALPACA_SECRET_KEY = os.environ.get("ALPACA_SECRET_KEY", "")

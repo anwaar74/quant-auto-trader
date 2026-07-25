@@ -99,13 +99,34 @@ def run_entries(client: TradingClient, allow_buys: bool) -> list[str]:
     if not allow_buys:
         return ["Buys skipped (campaign ended or signals stale)."]
     sig, asof = latest_signals()
-    top = sig.sort_values("rank").head(config.TOP_N)
     lots = load_positions()
     entry = date.today()
     if any(l["entry_date"] == entry.isoformat() for l in lots):
         return ["Buys skipped (today's tranche already placed)."]
+
+    # Walk down the ranking, keeping the first TOP_N Shariah-compliant names.
+    candidates = sig.sort_values("rank").head(
+        config.SHARIAH_MAX_CANDIDATES if config.SHARIAH_SCREEN else config.TOP_N)
+    picked, screen_msgs = [], []
+    if config.SHARIAH_SCREEN:
+        import shariah
+        for _, row in candidates.iterrows():
+            if len(picked) >= config.TOP_N:
+                break
+            ok, reason = shariah.is_compliant(row["ticker"])
+            if ok:
+                picked.append(row)
+            else:
+                screen_msgs.append(f"⛔ {row['ticker']} (rank {int(row['rank'])}): {reason}")
+        if len(picked) < config.TOP_N:
+            screen_msgs.append(
+                f"only {len(picked)}/{config.TOP_N} compliant names in top "
+                f"{config.SHARIAH_MAX_CANDIDATES}")
+    else:
+        picked = [row for _, row in candidates.iterrows()]
+    top = pd.DataFrame(picked)
     exit_after = pd.bdate_range(entry, periods=config.HOLD_BDAYS + 1)[-1].date()
-    msgs = []
+    msgs = list(screen_msgs)
     for _, row in top.iterrows():
         px = float(row["last_adj_close"])
         qty = min(int(config.BUDGET_PER_NAME // px), config.MAX_ORDER_QTY)
