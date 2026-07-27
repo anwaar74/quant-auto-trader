@@ -122,6 +122,10 @@ def run_entries(client: TradingClient, allow_buys: bool) -> list[str]:
             screen_msgs.append(
                 f"only {len(picked)}/{config.TOP_N} compliant names in top "
                 f"{config.SHARIAH_MAX_CANDIDATES}")
+        checked = len(picked) + sum(1 for m in screen_msgs if m.startswith("⛔"))
+        screen_msgs.insert(0, f"☪️ Shariah screen: {checked} checked, "
+                              f"{len(picked)} passed, "
+                              f"{checked - len(picked)} rejected")
     else:
         picked = [row for _, row in candidates.iterrows()]
     top = pd.DataFrame(picked)
