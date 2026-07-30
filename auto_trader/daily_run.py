@@ -38,7 +38,8 @@ def main() -> None:
         msg = data_refresh.refresh()
         notify.send(f"📥 Data: {msg}")
     except Exception as e:
-        notify.send(f"❌ Data refresh failed: {e}\nContinuing with existing data.")
+        notify.send(f"❌ Data refresh failed: {notify.esc(e)}\n"
+                    f"Continuing with existing data.")
         log.exception("refresh failed")
 
     # 2. Pipeline (skip if campaign over — no new signals needed)
@@ -53,7 +54,9 @@ def main() -> None:
                 txt += "\n⚠️ " + "\n⚠️ ".join(warns[:3])
             notify.send(txt)
         except Exception as e:
-            notify.send(f"❌ Pipeline failed: {e}")
+            # esc(): the notebook's stderr tail is full of <module>/<stdin>, which
+            # Telegram's HTML parser would reject — silently dropping the alert.
+            notify.send(f"❌ Pipeline failed:\n<pre>{notify.esc(e)[:3000]}</pre>")
             log.exception("pipeline failed")
 
     # 3. Trade
@@ -68,7 +71,8 @@ def main() -> None:
         lines.append(f"📊 {snap}")
         notify.send("\n".join(lines))
     except Exception as e:
-        notify.send(f"❌ Trading failed: {e}\n<pre>{traceback.format_exc()[-800:]}</pre>")
+        notify.send(f"❌ Trading failed: {notify.esc(e)}\n"
+                    f"<pre>{notify.esc(traceback.format_exc()[-800:])}</pre>")
         log.exception("trading failed")
         return
 
