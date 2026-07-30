@@ -5,6 +5,10 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent   # repo root
 
+# --- Identity (used in the cross-strategy comparison report) ---
+STRATEGY = "stefan_jansen"
+STRATEGY_LABEL = "Stefan Jansen (cross-sectional rank)"
+
 # --- Campaign ---
 CAMPAIGN_END = "2026-09-19"
 TOP_N = 3
@@ -40,3 +44,4 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 STATE_DIR = Path(__file__).resolve().parent
 POSITIONS_PATH = STATE_DIR / "positions.json"
 TRADES_LOG = STATE_DIR / "trades_log.csv"
+EQUITY_LOG = STATE_DIR / "equity_log.csv"      # daily account snapshot, for comparison

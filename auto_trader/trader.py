@@ -52,6 +52,13 @@ def latest_signals() -> tuple[pd.DataFrame, str]:
 
 
 # ---------------------------------------------------------------- broker
+def _mask_acct(num) -> str:
+    """Last 4 digits only — enough to confirm which account, in a CI log that
+    may be world-readable. Not a credential, but no reason to publish it."""
+    s = str(num or "")
+    return f"…{s[-4:]}" if len(s) > 4 else "…"
+
+
 def connect() -> TradingClient:
     if not config.ALPACA_API_KEY:
         raise SystemExit("ALPACA_API_KEY not set")
@@ -59,7 +66,7 @@ def connect() -> TradingClient:
                            paper=True)   # paper endpoint, always
     acct = client.get_account()
     log.info("Connected to Alpaca paper account %s (equity %s)",
-             acct.account_number, acct.equity)
+             _mask_acct(acct.account_number), acct.equity)
     return client
 
 
@@ -104,59 +111,89 @@ def run_entries(client: TradingClient, allow_buys: bool) -> list[str]:
     if any(l["entry_date"] == entry.isoformat() for l in lots):
         return ["Buys skipped (today's tranche already placed)."]
 
-    # Walk down the ranking, keeping the first TOP_N Shariah-compliant names.
-    candidates = sig.sort_values("rank").head(
-        config.SHARIAH_MAX_CANDIDATES if config.SHARIAH_SCREEN else config.TOP_N)
-    picked, screen_msgs = [], []
+    # Single walk down the ranking until TOP_N lots are actually FILLED. A name
+    # rejected by the screen, priced above the budget, or failing at the broker
+    # does NOT shorten the tranche — the walk continues to the next candidate.
+    candidates = sig.sort_values("rank").head(config.SHARIAH_MAX_CANDIDATES)
+    exit_after = pd.bdate_range(entry, periods=config.HOLD_BDAYS + 1)[-1].date()
     if config.SHARIAH_SCREEN:
         import shariah
-        for _, row in candidates.iterrows():
-            if len(picked) >= config.TOP_N:
-                break
-            ok, reason = shariah.is_compliant(row["ticker"])
-            if ok:
-                picked.append(row)
-            else:
-                screen_msgs.append(f"⛔ {row['ticker']} (rank {int(row['rank'])}): {reason}")
-        if len(picked) < config.TOP_N:
-            screen_msgs.append(
-                f"only {len(picked)}/{config.TOP_N} compliant names in top "
-                f"{config.SHARIAH_MAX_CANDIDATES}")
-        checked = len(picked) + sum(1 for m in screen_msgs if m.startswith("⛔"))
-        screen_msgs.insert(0, f"☪️ Shariah screen: {checked} checked, "
-                              f"{len(picked)} passed, "
-                              f"{checked - len(picked)} rejected")
-    else:
-        picked = [row for _, row in candidates.iterrows()]
-    top = pd.DataFrame(picked)
-    exit_after = pd.bdate_range(entry, periods=config.HOLD_BDAYS + 1)[-1].date()
-    msgs = list(screen_msgs)
-    for _, row in top.iterrows():
+
+    placed, n_screened, n_rejected, msgs = 0, 0, 0, []
+    for _, row in candidates.iterrows():
+        if placed >= config.TOP_N:
+            break
+        tk = row["ticker"]
+
         px = float(row["last_adj_close"])
         qty = min(int(config.BUDGET_PER_NAME // px), config.MAX_ORDER_QTY)
         if qty < 1:
-            msgs.append(f"skip {row['ticker']}: price {px:.2f} > budget")
+            msgs.append(f"↷ {tk} (rank {int(row['rank'])}): price {px:.2f} "
+                        f"> ${config.BUDGET_PER_NAME:.0f} budget")
             continue
+
+        if config.SHARIAH_SCREEN:
+            n_screened += 1
+            ok, reason = shariah.is_compliant(tk)
+            if not ok:
+                n_rejected += 1
+                msgs.append(f"⛔ {tk} (rank {int(row['rank'])}): {reason}")
+                continue
+
         try:
-            r = _place(client, OrderSide.BUY, row["ticker"], qty,
-                       f"top{config.TOP_N} asof {asof}")
-            lots.append({"ticker": row["ticker"], "qty": qty,
+            r = _place(client, OrderSide.BUY, tk, qty, f"top{config.TOP_N} asof {asof}")
+            lots.append({"ticker": tk, "qty": qty,
                          "entry_date": entry.isoformat(),
                          "exit_after": exit_after.isoformat()})
-            msgs.append(f"BUY {row['ticker']} x{qty} @~{px:.2f} "
+            placed += 1
+            msgs.append(f"BUY {tk} x{qty} @~{px:.2f} "
                         f"rank {int(row['rank'])} ({r['status']})")
         except Exception as e:
-            log.exception("Entry failed for %s", row["ticker"])
-            msgs.append(f"BUY {row['ticker']} FAILED: {e}")
+            log.exception("Entry failed for %s", tk)
+            msgs.append(f"BUY {tk} FAILED: {e}")
+
+    if config.SHARIAH_SCREEN:
+        msgs.insert(0, f"☪️ Shariah screen: {n_screened} checked, "
+                       f"{n_screened - n_rejected} passed, {n_rejected} rejected")
+    if placed < config.TOP_N:
+        msgs.append(f"⚠️ only {placed}/{config.TOP_N} lots placed from the top "
+                    f"{len(candidates)} names")
     save_positions(lots)
     return msgs
 
 
+def log_equity(row: dict) -> None:
+    """Append a daily account snapshot — the input to the cross-book comparison."""
+    new = not config.EQUITY_LOG.exists()
+    with open(config.EQUITY_LOG, "a", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=["date", "strategy", "equity", "last_equity",
+                                           "cash", "long_mv", "short_mv", "n_positions",
+                                           "positions"])
+        if new:
+            w.writeheader()
+        w.writerow(row)
+
+
 def account_snapshot(client: TradingClient) -> str:
+    """Print-friendly snapshot; also appends a row to equity_log.csv."""
     try:
         acct = client.get_account()
         pos = client.get_all_positions()
+        long_mv = sum(float(p.market_value) for p in pos if float(p.qty) > 0)
+        short_mv = sum(float(p.market_value) for p in pos if float(p.qty) < 0)
         pos_str = ", ".join(f"{p.symbol}:{p.qty}" for p in pos) or "flat"
+        log_equity({
+            "date": date.today().isoformat(),
+            "strategy": config.STRATEGY,
+            "equity": float(acct.equity),
+            "last_equity": float(acct.last_equity),
+            "cash": float(acct.cash),
+            "long_mv": round(long_mv, 2),
+            "short_mv": round(short_mv, 2),
+            "n_positions": len(pos),
+            "positions": pos_str,
+        })
         return f"Equity ${float(acct.equity):,.0f} | positions: {pos_str}"
     except Exception:
+        log.exception("account snapshot failed")
         return "account snapshot unavailable"

@@ -41,6 +41,7 @@ jobs:
           git config user.name "auto-trader-bot"
           git config user.email "bot@users.noreply.github.com"
           git add auto_trader/positions.json auto_trader/trades_log.csv \
+                  auto_trader/equity_log.csv \
                   signals_*.csv day10_run_meta.json paper_log.csv 2>/dev/null || true
           git commit -m "state: $(date -u +%F)" || echo "nothing to commit"
           git push
