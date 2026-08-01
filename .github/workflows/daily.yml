@@ -40,11 +40,25 @@ jobs:
         run: |
           git config user.name "auto-trader-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add auto_trader/positions.json auto_trader/trades_log.csv \
-                  auto_trader/equity_log.csv \
-                  signals_*.csv day10_run_meta.json paper_log.csv 2>/dev/null || true
-          git commit -m "state: $(date -u +%F)" || echo "nothing to commit"
-          git push
+          # Add only paths that exist, ONE AT A TIME. `git add a b c` validates
+          # every pathspec first and aborts staging ENTIRELY if any one is
+          # missing — so a stale `paper_log.csv` in this list silently froze
+          # positions.json at [] on every run, and the book bought daily and
+          # never sold. Never batch pathspecs that may not exist.
+          for f in auto_trader/positions.json auto_trader/trades_log.csv \
+                   auto_trader/equity_log.csv day10_run_meta.json signals_*.csv; do
+            [ -e "$f" ] && git add "$f" || true
+          done
+          if git diff --cached --quiet; then
+            echo "nothing to commit"
+          else
+            git commit -m "state: $(date -u +%F)"
+            git push || (git pull --rebase --autostash origin main && git push)
+            echo "--- state persisted ---"
+            git --no-pager show --stat --oneline HEAD
+          fi
+          echo "--- positions.json now in repo ---"
+          cat auto_trader/positions.json || echo "(none)"
 
       - name: Upload executed notebook (debug aid)
         if: failure()
