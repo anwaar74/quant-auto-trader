@@ -1,0 +1,4 @@
+date,action,ticker,qty,order_id,status,note
+2026-08-03,BUY,AMAT,1,b2af7fde-87d4-482c-80bd-bbf07d8a875c,pending_new,top3 asof 20260731
+2026-08-03,BUY,STX,1,34dc7350-e0e5-4399-920c-758b87bca227,pending_new,top3 asof 20260731
+2026-08-03,BUY,TSLA,3,be5e651c-c103-48cc-82d3-ebc7f705d710,pending_new,top3 asof 20260731

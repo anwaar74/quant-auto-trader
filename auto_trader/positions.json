@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "ticker": "AMAT",
+    "qty": 1,
+    "entry_date": "2026-08-03",
+    "exit_after": "2026-08-10"
+  },
+  {
+    "ticker": "STX",
+    "qty": 1,
+    "entry_date": "2026-08-03",
+    "exit_after": "2026-08-10"
+  },
+  {
+    "ticker": "TSLA",
+    "qty": 3,
+    "entry_date": "2026-08-03",
+    "exit_after": "2026-08-10"
+  }
+]
