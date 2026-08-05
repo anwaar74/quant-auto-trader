@@ -2,3 +2,6 @@ date,action,ticker,qty,order_id,status,note
 2026-08-03,BUY,AMAT,1,b2af7fde-87d4-482c-80bd-bbf07d8a875c,pending_new,top3 asof 20260731
 2026-08-03,BUY,STX,1,34dc7350-e0e5-4399-920c-758b87bca227,pending_new,top3 asof 20260731
 2026-08-03,BUY,TSLA,3,be5e651c-c103-48cc-82d3-ebc7f705d710,pending_new,top3 asof 20260731
+2026-08-05,BUY,CHRW,6,711a372b-9380-45f1-baae-cdd2715d5221,pending_new,top3 asof 20260804
+2026-08-05,BUY,STX,1,9cb8ff52-f694-45da-89a8-4f7cb801eb88,pending_new,top3 asof 20260804
+2026-08-05,BUY,PANW,2,91206fa0-84b4-469f-9972-19a9ba3023c9,pending_new,top3 asof 20260804

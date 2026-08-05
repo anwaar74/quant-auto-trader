@@ -16,5 +16,23 @@
     "qty": 3,
     "entry_date": "2026-08-03",
     "exit_after": "2026-08-10"
+  },
+  {
+    "ticker": "CHRW",
+    "qty": 6,
+    "entry_date": "2026-08-05",
+    "exit_after": "2026-08-12"
+  },
+  {
+    "ticker": "STX",
+    "qty": 1,
+    "entry_date": "2026-08-05",
+    "exit_after": "2026-08-12"
+  },
+  {
+    "ticker": "PANW",
+    "qty": 2,
+    "entry_date": "2026-08-05",
+    "exit_after": "2026-08-12"
   }
 ]
