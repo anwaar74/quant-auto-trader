@@ -34,5 +34,23 @@
     "qty": 2,
     "entry_date": "2026-08-05",
     "exit_after": "2026-08-12"
+  },
+  {
+    "ticker": "NOW",
+    "qty": 8,
+    "entry_date": "2026-08-06",
+    "exit_after": "2026-08-13"
+  },
+  {
+    "ticker": "STX",
+    "qty": 1,
+    "entry_date": "2026-08-06",
+    "exit_after": "2026-08-13"
+  },
+  {
+    "ticker": "WDAY",
+    "qty": 5,
+    "entry_date": "2026-08-06",
+    "exit_after": "2026-08-13"
   }
 ]
