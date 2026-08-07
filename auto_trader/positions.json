@@ -52,5 +52,23 @@
     "qty": 5,
     "entry_date": "2026-08-06",
     "exit_after": "2026-08-13"
+  },
+  {
+    "ticker": "AMD",
+    "qty": 2,
+    "entry_date": "2026-08-07",
+    "exit_after": "2026-08-14"
+  },
+  {
+    "ticker": "AMAT",
+    "qty": 1,
+    "entry_date": "2026-08-07",
+    "exit_after": "2026-08-14"
+  },
+  {
+    "ticker": "FTNT",
+    "qty": 6,
+    "entry_date": "2026-08-07",
+    "exit_after": "2026-08-14"
   }
 ]
